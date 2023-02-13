@@ -1,0 +1,106 @@
+/* REXX */                                                              
+/* REXX PROGRAM FOR MONITORING SPOOL UTILIZATION */                     
+/* IF SPOOL IS ABOVE 80% UTILIZATION, REXX WILL ISSUE A MESSAGE TO */   
+/* ONLINE USERS INSTRUCTING THEM TO PURGE THEIR JOBS FROM THE SPOOL */  
+/* IF THE SPOOL RISES TO 85% UTILIZATION, THIS PROGRAM WILL BEGIN TO */ 
+/* CANCEL ALL OUTPUT IN THE HELD OUT QUEUE, IF THE SPOOL UTILIZATION */ 
+/* IS ABOVE 90%, THE PROGRAM WILL PURGE ALL BATCH JOBS AND OUTPUT*/     
+/* IF THE SPOOL UTILIZATION IS AT 95%, ALL JOBS WILL BE PURGED AND */   
+/* THEIR OUTPUT, AND A MESSAGE WILL BE SENT TO HMVS01 */                
+/* INTRUCTING TO SHUT DOWN THE SYSTEM AND FORMAT THE JES SPOOL */       
+/* UPON RESTART */                                                      
+                                                                        
+                                                                        
+SPLUTIL = GET_SPLUTIL() /* GET SPOOL UTILIZATION NUMBER */              
+FIRST_SPLUTIL = SPLUTIL                                                 
+                                                                        
+/* MESSAGES SENT USING TSO SEND */                                      
+MSG_HEADER1 = COPIES('-',72)                                            
+MSG_SPOOLIS = CENTER('SPOOL UTILIZATION IS 'SPLUTIL'%', 72)             
+MSG_HEADER3 = COPIES('-',72)                                            
+                                                                        
+MSG_SPOOLWAS = CENTER('SPOOL UTILIZATION WAS 'FIRST_SPLUTIL'%', 72)     
+                                                                        
+MSG_INTERV80 = CENTER('INTERVENTION REQUIRED - PURGE JOB OUTPUT         
+FROM THE QUEUE', 72)                                                    
+MSG_INVESTIGATE = CENTER('PLEASE INVESTIGATE', 72)                      
+MSG_POUTQ = CENTER('ALL HELD OUTPUT HAS BEEN CANCELLED', 72)            
+MSG_PJOBS = CENTER('ALL BATCH JOBS HAVE BEEN PURGED', 72)               
+MSG_SHUTDOWN = CENTER('JES2 RESOURCE SHORTAGE, SHUTDOWN SYSTEM          
+AND FORMAT JES2 QUEUE ON RESTART', 72)                                  
+                                                                        
+/* ACTIONS TAKEN DEPENDING ON SPOOL UTILIZATION */                      
+SELECT                                                                  
+                                                                        
+   WHEN SPLUTIL >= 80 & SPLUTIL < 85 THEN DO                            
+      ADDRESS TSO "SEND '"MSG_HEADER1"',USER(HMVS01)"                   
+      ADDRESS TSO "SEND '"MSG_SPOOLIS"',USER(HMVS01)"                   
+      ADDRESS TSO "SEND '"MSG_INTERV80"',USER(HMVS01)"                  
+      ADDRESS TSO "SEND '"MSG_HEADER3"',USER(HMVS01)"                   
+   END                                                                  
+                                                                        
+   WHEN SPLUTIL >= 85 & SPLUTIL < 90 THEN DO                            
+      /* CANCEL EVERYTHING IN HELD OUTPUT QUEUE */                      
+      CALL CONSOLE('$O Q=X,C')                                          
+      ADDRESS TSO "SEND '"MSG_HEADER1"',USER(HMVS01)"                   
+      ADDRESS TSO "SEND '"MSG_POUTQ"',USER(HMVS01)"                     
+      ADDRESS TSO "SEND '"MSG_SPOOLWAS"',USER(HMVS01)"                  
+   /* ADDRESS TSO "SEND '"MSG_SPOOLIS"',USER(HMVS01)" */                
+      ADDRESS TSO "SEND '"MSG_INVESTIGATE"',USER(HMVS01)"               
+      ADDRESS TSO "SEND '"MSG_HEADER3"',USER(HMVS01)"                   
+   END                                                                  
+                                                                        
+   WHEN SPLUTIL >= 90 & SPLUTIL < 95 THEN DO                            
+      /* PURGE ALL BATCH JOBS AND THEIR OUTPUT */                       
+      CALL CONSOLE('$PJ1-9999')                                         
+      ADDRESS TSO "SEND '"MSG_HEADER1"',USER(HMVS01)"                   
+      ADDRESS TSO "SEND '"MSG_SPOOLWAS"',USER(HMVS01)"                  
+   /* ADDRESS TSO "SEND '"MSG_SPOOLIS"',USER(HMVS01)" */                
+      ADDRESS TSO "SEND '"MSG_PJOBS"',USER(HMVS01)"                     
+      ADDRESS TSO "SEND '"MSG_INVESTIGATE"',USER(HMVS01)"               
+      ADDRESS TSO "SEND '"MSG_HEADER3"',USER(HMVS01)"                   
+   END                                                                  
+                                                                        
+   WHEN SPLUTIL >= 95 THEN DO                                           
+      /* PURGE ALL BATCH JOBS AND THEIR OUTPUT */                       
+      CALL CONSOLE('$PJ1-9999')                                         
+      ADDRESS TSO "SEND '"MSG_HEADER1"',USER(HMVS01)"                   
+      ADDRESS TSO "SEND '"MSG_PJOBS"',USER(HMVS01)"                     
+      ADDRESS TSO "SEND '"MSG_SPOOLWAS"',USER(HMVS01)"                  
+   /* ADDRESS TSO "SEND '"MSG_SPOOLIS"',USER(HMVS01)" */                
+      ADDRESS TSO "SEND '"MSG_SHUTDOWN"',USER(HMVS01)"                  
+      ADDRESS TSO "SEND '"MSG_HEADER3"',USER(HMVS01)"                   
+   END                                                                  
+                                                                        
+   OTHERWISE NOP                                                        
+                                                                        
+END                                                                     
+                                                                        
+                                                                        
+EXIT                                                                    
+                                                                        
+                                                                        
+GET_SPLUTIL:                                                            
+CALL RXCONSOL('$D QUEUE') /* CONSOLE CMD TO VIEW SPOOL UTILIZATION */   
+                                                                        
+/* MESSAGE THAT IS DISPLAYED FROM $D QUEUE WHEN PPU > 0                 
+0000 23.09.33 TSU   39  $D QUEUE                                        
+8000 23.09.33           $HASP000   42 PPU LOCAL    ANY                  
+8000 23.09.33           $HASP000   1 PERCENT SPOOL UTILIZATION          
+*/                                                                      
+                                                                        
+/* MESSAGE THAT IS DISPLAYED FROM $D QUEUE WHEN PPU = 0                 
+0000  3.03.51 TSU   39  $D QUEUE                                        
+8000  3.03.51           $HASP000   0 PERCENT SPOOL UTILIZATION */       
+                                                                        
+SPLUTIL = WORD(CONSOLE.3, 4) /* PERCENT SPOOL UTILIZATION */            
+/* MESSAGE 'PERCENT SPOOL UTILIZATION' */                               
+SPLMSG = WORD(CONSOLE.3, 5) WORD(CONSOLE.3,6) WORD(CONSOLE.3,7)         
+                                                                        
+/* CHECK IF SPLUTIL INFO IS FROM CORRECT MESSAGE */                     
+IF SPLMSG /= 'PERCENT SPOOL UTILIZATION' THEN DO                        
+   SPLUTIL = WORD(CONSOLE.2, 4)                                         
+   SPLMSG = WORD(CONSOLE.2, 5) WORD(CONSOLE.2,6) WORD(CONSOLE.2,7)      
+END                                                                     
+RETURN SPLUTIL                                                          
+                                                                        

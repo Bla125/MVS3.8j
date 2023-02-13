@@ -1,0 +1,7 @@
+/* REXX */                                                               
+/* READ MESSAGE FROM MESSAGE DD IN JOB AND WRITE TO SYS2.CHANGE.FILE */  
+                                                                         
+"EXECIO * DISKR MESSAGE (STEM INPUT."                                    
+"EXECIO "INPUT.0" DISKW MSGOUT (STEM INPUT."                             
+                                                                         
+EXIT                                                                     
