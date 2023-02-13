@@ -1,0 +1,6 @@
+//STCJOB   PROC MEMBER='',LIB='SYS2.JCLLIB'                             
+//STEP1    EXEC PGM=IEBGENER                                            
+//SYSPRINT DD SYSOUT=A                                                  
+//SYSUT1   DD DISP=SHR,DSN=&LIB(&MEMBER)                                
+//SYSUT2   DD SYSOUT=(A,INTRDR)                                         
+//SYSIN    DD DUMMY                                                     

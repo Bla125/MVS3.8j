@@ -1,0 +1,29 @@
+//SPLMONRE JOB 1,'REPRO RXSPLMON',                                      
+//             CLASS=A,MSGCLASS=X,MSGLEVEL=(1,1),NOTIFY=&SYSUID         
+//REXX     EXEC RXTSO,EXEC='CHNGMSG',SLIB='SYS2.EXEC'                   
+//MSGOUT   DD DSN=&&MSG,DISP=(NEW,PASS),                                
+//    UNIT=SYSDA,SPACE=(TRK,(1,1)),DCB=(RECFM=FB,LRECL=80,BLKSIZE=80)   
+//MESSAGE  DD *                                                         
+PROGRAM: SPLMON00                        VERSION: V1M0 DATE:2/02/2023   
+/*                                                                      
+//REPRO    EXEC PGM=IDCAMS                                              
+//SYSPRINT DD SYSOUT=*                                                  
+//MSGINDD  DD DSN=&&MSG,DISP=(OLD,DELETE)                               
+//MSGOUTDD DD DSN=SYS2.CHANGES.FILE,DISP=MOD                            
+//INDDNEW  DD DSN=HMVS01.EXEC(RXSPLMON),DISP=SHR                        
+//OUTDDNEW DD DSN=SYS2.EXEC(SPLMON00),DISP=SHR                          
+//OUTDDOLD DD DSN=SYS2.EXEC(SPLMON01),DISP=SHR                          
+//SYSIN    DD *                                                         
+ /* COPY MESSAGE AND APPEND TO END OF CHANGES FILE */                   
+ REPRO INFILE(MSGINDD)   -                                              
+       OUTFILE(MSGOUTDD) -                                              
+       NOREUSE                                                          
+ /* COPY SPLMON00 TO BACKUP DATASET SPLMON01 */                         
+ REPRO INFILE(OUTDDNEW)  -                                              
+       OUTFILE(OUTDDOLD) -                                              
+       REUSE                                                            
+ /* COPY RXSPLMON TO SPLMON00 */                                        
+ REPRO INFILE(INDDNEW)   -                                              
+       OUTFILE(OUTDDNEW) -                                              
+       REUSE                                                            
+/*                                                                      

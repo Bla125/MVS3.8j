@@ -1,0 +1,3 @@
+//SPLMON JOB 1,'REXX SPOOL MONITOR',CLASS=A,                            
+//            MSGCLASS=A,MSGLEVEL=(1,1)                                 
+//REXX EXEC RXTSO,EXEC='SPLMON00',SLIB='SYS2.EXEC'                      
